@@ -1,0 +1,164 @@
+---
+title: "Multiple Linear Regression"
+author: "Mostafa Alaywan"
+date: "6/17/2021"
+output:
+  word_document: default
+  html_document: default
+---
+
+Introduction
+En statistique, la régression linéaire multiple est une méthode de régression pour décrire les variations d'une variable endogène(dépendante) associée aux variations de plusieurs variables exogènes(indépendantes).
+
+On va appliquer la méthode de moindre carrée ordinaire(MCO)pour estimer les coefficients des variables indépendantes,Le principe de cette méthode est de minimiser l’erreur entre les vraies valeurs de la variable dépendent et leur valeur estimes par le modèle. 
+
+```{r}
+library(ggplot2)
+library(AER)
+library(car)
+library(dplyr)
+library(psych)
+library(broom)
+library(Hmisc)
+library(equatiomatic)
+library(ggfortify)
+```
+
+
+Importer la base de donnée « CPS1985 » de la librairie « AER » :  
+
+
+```{r}
+data("CPS1985")
+salaire <- CPS1985
+```
+
+
+Explorer la base de donnée « salaire » : Salaire est formée de 534 observations, 11 variables dont 4 variables sont quantitatives et 7 variables qualitatives
+
+
+```{r}
+str(salaire)
+```
+
+
+D’abord on va vérifier s’il y a des valeurs manquantes :pas des valeurs manquantes(Missing Values)
+
+
+```{r}
+which(is.na(salaire))
+```
+
+Un peu des statistiques descriptives pour explorer les variables pour la variable wage on a : Minimum = 1 ; maximum = 44.5 ; moyenne = 9.024 ; 25% des valeurs du wage sont plus petit que 5.25 ; 50 % des valeurs du wage sont plus petit que 9.025 ; 75 % des valeurs du wage sont plus petit que 11.250
+
+
+```{r}
+summary(salaire)
+```
+
+plus details des variables du salaire :
+la variable "education" contient 17 valeurs différentes ; 5% des valeurs sont plus petites que 3.50 ; il y a 10 valeurs aberrantes(1,1.75,2.01,2.85,...)
+
+
+```{r}
+describe(salaire)
+```
+
+Histogramme de la variable : wage
+
+
+```{r}
+ggplot(data = salaire , aes(x=wage))+geom_histogram(binwidth = 0.2 , fill = "red")+theme_minimal()+ labs(x="wage")
+```
+
+
+« region » est une variable qualitative nominal forme de deux modalités (catégories) : « south » et « other » , dont les proportions sont respectivement : 0.29 et 0.71
+
+
+```{r}
+region <- table(salaire$region)
+prop.table(region)
+```
+
+
+le modèle de régression linéaire : 
+
+
+```{r}
+attach(salaire)
+modele <- lm(wage ~ . , data = salaire)
+modele %>% tidy()
+```
+
+
+L’équation du modèle:
+
+
+```{r}
+equatiomatic::extract_eq(modele, use_coefs = TRUE)
+```
+
+Les résidus:
+
+
+```{r}
+residus <- modele$residuals
+```
+
+
+Les résidus ne sont pas normalement distribués 
+
+
+```{r}
+shapiro.test(residus)
+```
+
+
+Il existe une linéarité entre les vraies valeurs et les résidus, c’est un bon indice  
+
+
+```{r}
+ggplot(data = salaire,aes(x=wage , y=residus))+geom_point(color = "blue")+theme_minimal()
+```
+
+
+Les caractéristiques du modèle : 
+Coefficient de détermination = 0.32 c.à.d. le modèle explique 32 % de la variance total de la variable « wage » , c’est très petit , le modèle a besoin d’améliorer , La variance des résidus vaut 4.28 (sigma) 
+
+
+```{r}
+modele%>% glance()
+```
+
+Indépendance des résidus est vérifié à partir du test de Durbin-Watson, comme le p-value=0.92 > 0.05 donc on peut déduire que les résidus sont indépendants 
+
+
+```{r}
+durbinWatsonTest(modele)
+```
+
+
+A partir de ces graphes on peut déduire : 
+-	Les résidus ne sont pas normalement distribués (Normal Q-Q)
+-	L’observation d’indice 170 est un point aberrant
+-	La variance des résidus est constant (fitted values – Residuals)
+
+
+```{r}
+
+autoplot(modele,which = 1:6)+theme_minimal()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
